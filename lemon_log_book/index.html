@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lemon Tours & Travels - Booking System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="style.css" />
+    <!-- Chart.js and jsPDF libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- WhatsApp integration -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-bus"></i> Lemon Tours & Travels</h1>
+            <p>Booking Management System</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="booking">New Booking</button>
+            <button class="tab-btn" data-tab="records">Booking Records</button>
+            <button class="tab-btn" data-tab="dashboard">Dashboard</button>
+            <button class="tab-btn" data-tab="invoice">Invoice</button>
+            <button class="tab-btn" data-tab="whatsapp">WhatsApp</button>
+        </div>
+
+        <!-- Booking Form -->
+        <div id="booking" class="tab-content active">
+            <h2><i class="fas fa-plus-circle"></i> New Booking Form</h2>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label for="customerName">Customer Name*</label>
+                    <input type="text" id="customerName" required />
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Phone Number*</label>
+                        <input type="tel" id="phone" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="bookingDate">Booking Date*</label>
+                        <input type="date" id="bookingDate" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="pickup">Pickup Location*</label>
+                        <input type="text" id="pickup" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">Destination*</label>
+                        <input type="text" id="destination" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="buses">Number of Buses*</label>
+                        <input type="number" id="buses" min="1" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="totalAmount">Total Amount (₹)*</label>
+                        <input type="number" id="totalAmount" min="0" step="0.01" required />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="advance">Advance Payment (₹)*</label>
+                        <input type="number" id="advance" min="0" step="0.01" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="balance">Balance Amount (₹)</label>
+                        <input type="number" id="balance" readonly />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="sendWhatsApp" checked />
+                        Send booking confirmation via WhatsApp
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Booking</button>
+                    <button type="reset" class="btn btn-secondary">Reset Form</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Booking Records -->
+        <div id="records" class="tab-content">
+            <h2><i class="fas fa-list"></i> Booking Records</h2>
+
+            <div class="action-bar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Search by name or phone" />
+                    <button id="searchBtn"><i class="fas fa-search"></i></button>
+                </div>
+                <div class="export-buttons">
+                    <button id="exportExcel" class="btn btn-primary"><i class="fas fa-file-excel"></i> Excel</button>
+                    <button id="exportPDF" class="btn btn-danger"><i class="fas fa-file-pdf"></i> PDF</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="bookingsTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer Name</th>
+                            <th>Phone</th>
+                            <th>Booking Date</th>
+                            <th>Pickup</th>
+                            <th>Destination</th>
+                            <th>Buses</th>
+                            <th>Total (₹)</th>
+                            <th>Advance (₹)</th>
+                            <th>Balance (₹)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="tab-content">
+            <h2><i class="fas fa-chart-line"></i> Business Dashboard</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalBookings">0</div>
+                    <div class="stat-label">Total Bookings</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalBuses">0</div>
+                    <div class="stat-label">Buses Booked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalRevenue">₹0</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalAdvance">₹0</div>
+                    <div class="stat-label">Advance Collected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingBalance">₹0</div>
+                    <div class="stat-label">Pending Balance</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-card">
+                    <h3>Monthly Bookings</h3>
+                    <canvas id="monthlyBookingsChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>Payment Status</h3>
+                    <canvas id="paymentStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Section -->
+        <div id="invoice" class="tab-content">
+            <h2><i class="fas fa-file-invoice"></i> Booking Invoice</h2>
+            <div class="invoice-container">
+                <div id="invoiceContent">
+                    <div class="invoice-header">
+                        <h3>Lemon Tours & Travels</h3>
+                        <p>Hyderabad City</p>
+                        <p>Phone: +91 9000187992</p>
+                    </div>
+                    
+                    <div class="invoice-details">
+                        <div class="invoice-meta">
+                            <p><strong>Invoice ID:</strong> <span id="invoiceId">#0000</span></p>
+                            <p><strong>Date:</strong> <span id="invoiceDate"></span></p>
+                        </div>
+                        <div class="customer-info">
+                            <p><strong>Customer Name:</strong> <span id="invoiceCustomerName"></span></p>
+                            <p><strong>Phone:</strong> <span id="invoicePhone"></span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="booking-details">
+                        <p><strong>Booking Date:</strong> <span id="invoiceBookingDate"></span></p>
+                        <p><strong>Pickup Location:</strong> <span id="invoicePickup"></span></p>
+                        <p><strong>Destination:</strong> <span id="invoiceDestination"></span></p>
+                        <p><strong>Number of Buses:</strong> <span id="invoiceBuses"></span></p>
+                    </div>
+                    
+                    <div class="invoice-summary">
+                        <table>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount (₹)</th>
+                            </tr>
+                            <tr>
+                                <td>Total Amount</td>
+                                <td id="invoiceTotal">0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Advance Paid</td>
+                                <td id="invoiceAdvance">0.00</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Balance Amount</strong></td>
+                                <td id="invoiceBalance"><strong>0.00</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="invoice-footer">
+                        <p>Thank you for choosing Lemon Tours & Travels!</p>
+                        <p>For any queries, please contact +91 9000187992</p>
+                    </div>
+                </div>
+
+                <div class="invoice-actions">
+                    <button id="printInvoiceBtn" class="btn btn-primary"><i class="fas fa-print"></i> Print Invoice</button>
+                    <button id="downloadInvoiceBtn" class="btn btn-danger"><i class="fas fa-download"></i> Download PDF</button>
+                    <button id="sendWhatsAppInvoiceBtn" class="btn btn-success"><i class="fab fa-whatsapp"></i> Send via WhatsApp</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Section -->
+        <div id="whatsapp" class="tab-content">
+            <h2><i class="fab fa-whatsapp"></i> WhatsApp Messaging</h2>
+            
+            <div class="whatsapp-settings">
+                <h3><i class="fas fa-cog"></i> WhatsApp API Settings</h3>
+                <div class="form-group">
+                    <label for="apiKey">WhatsApp Business API Key</label>
+                    <input type="text" id="apiKey" placeholder="Enter your WhatsApp Business API key" />
+                </div>
+                <div class="form-group">
+                    <label for="apiUrl">API Endpoint URL</label>
+                    <input type="text" id="apiUrl" value="https://api.whatsapp.com/send" />
+                </div>
+                <div class="form-group">
+                    <label for="businessPhone">Business Phone Number</label>
+                    <input type="text" id="businessPhone" placeholder="e.g., 9000187992" />
+                </div>
+                <button id="saveWhatsAppSettings" class="btn btn-primary">Save Settings</button>
+            </div>
+            
+            <div class="whatsapp-messaging">
+                <h3><i class="fas fa-paper-plane"></i> Send Messages</h3>
+                <div class="form-group">
+                    <label for="whatsappPhone">Recipient Phone Number</label>
+                    <input type="text" id="whatsappPhone" placeholder="e.g., 9000187992" />
+                </div>
+                <div class="form-group">
+                    <label for="whatsappMessage">Message Template</label>
+                    <select id="whatsappTemplate">
+                        <option value="booking_confirmation">Booking Confirmation</option>
+                        <option value="payment_reminder">Payment Reminder</option>
+                        <option value="custom">Custom Message</option>
+                    </select>
+                </div>
+                <div class="form-group" id="customMessageContainer" style="display: none;">
+                    <label for="whatsappCustomMessage">Custom Message</label>
+                    <textarea id="whatsappCustomMessage" rows="5" placeholder="Enter your custom message here"></textarea>
+                </div>
+                <button id="sendWhatsAppMessage" class="btn btn-success"><i class="fab fa-whatsapp"></i> Send Message</button>
+                
+                <div id="whatsappStatus" class="status-message"></div>
+            </div>
+            
+            <div class="whatsapp-templates">
+                <h3><i class="fas fa-list-alt"></i> Message Templates</h3>
+                <div class="template-card">
+                    <h4>Booking Confirmation</h4>
+                    <p>Hello {customer_name}, your booking with Lemon Tours & Travels is confirmed! Booking ID: {booking_id}. Pickup: {pickup_location} on {booking_date}. Total: ₹{total_amount}, Advance: ₹{advance_amount}, Balance: ₹{balance_amount}. Thank you!</p>
+                </div>
+                <div class="template-card">
+                    <h4>Payment Reminder</h4>
+                    <p>Hello {customer_name}, this is a reminder for your pending payment of ₹{balance_amount} for booking ID: {booking_id}. Please complete the payment at your earliest convenience. Thank you!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
